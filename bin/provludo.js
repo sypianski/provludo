@@ -38,7 +38,7 @@ function parseArgs(argv) {
   const opts = { port: 8765, host: "127.0.0.1", open: true, positional: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--port") opts.port = parseInt(argv[++i], 10);
+    if (a === "--port") { opts.port = parseInt(argv[++i], 10); opts.portExplicit = true; }
     else if (a === "--host") opts.host = argv[++i];
     else if (a === "--root") opts.root = argv[++i];
     else if (a === "--tailnet") opts.tailnet = true;
@@ -141,16 +141,27 @@ async function serve(opts) {
   }
 
   const server = createServer(serverOpts);
-  server.listen(opts.port, opts.host, () => {
-    const url = `http://${urlHost}:${opts.port}/`;
+  let port = opts.port;
+  const onListen = () => {
+    const url = `http://${urlHost}:${port}/`;
     const what = serverOpts.mode === "root" ? serverOpts.root
       : serverOpts.mode === "project" ? path.basename(serverOpts.target)
       : serverOpts.project.name;
     console.log(`provludo: ${what} → ${url}  (Ctrl+C to stop)`);
     if (opts.open) openBrowser(url);
+  };
+  server.on("listening", onListen);   /* fires once — retries below reuse it */
+  server.on("error", e => {
+    if (e.code === "EADDRINUSE") {
+      /* explicit --port: fail loudly; default port: walk up to a free one */
+      if (opts.portExplicit) fail(`port ${port} is taken (use a different --port)`);
+      if (++port > opts.port + 20) fail(`no free port in ${opts.port}–${port - 1}`);
+      server.listen(port, opts.host);
+      return;
+    }
+    fail(String(e.message || e));
   });
-  server.on("error", e => fail(e.code === "EADDRINUSE"
-    ? `port ${opts.port} is taken (use --port)` : String(e.message || e)));
+  server.listen(port, opts.host);
 }
 
 /* ── main ─────────────────────────────────────────── */
