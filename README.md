@@ -17,6 +17,8 @@ for the human↔AI loop of making presentations:
 *provludo* is Esperanto for **dress rehearsal** (*prov-* "trial" +
 *ludo* "play").
 
+![Drafting in provludo: select a phrase, leave a suggestion for the AI agent, autosaved to Markdown](https://raw.githubusercontent.com/sypianski/provludo/main/docs/suggestion.gif)
+
 ## Quick start
 
 ```bash
@@ -30,6 +32,18 @@ opens, and a first-run tour shows you around. Then tell your AI agent:
 
 When the deck exists, the same page grows a **slides ⇄ text** toggle:
 review the live deck on one side, edit the draft on the other.
+
+## What it looks like
+
+Reviewing the generated deck — comment on a selected fragment, right on
+the live slides; everything lands in a change queue for the agent:
+
+![Review layer on a live reveal.js deck: suggestion modal for a selected fragment](https://raw.githubusercontent.com/sypianski/provludo/main/docs/review.png)
+
+The draft editor with the table of contents, a suspended slide and an
+appendix slide; a first-run tour explains the controls:
+
+![First-run tour spotlighting the slide bar in the draft editor](https://raw.githubusercontent.com/sypianski/provludo/main/docs/tour.png)
 
 ## Running it
 
