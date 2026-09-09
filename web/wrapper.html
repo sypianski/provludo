@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>provludo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗂</text></svg>">
+<style>
+  :root { --paper: #faf7f1; --ink: #2b2620; --line: #d9d2c4; --accent: #7d5a3c; }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #211e1a; --ink: #e8e2d6; --line: #423c33; --accent: #c9a175; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { display: flex; flex-direction: column; background: var(--paper); color: var(--ink);
+         font-family: "Alegreya Sans", "Segoe UI", system-ui, sans-serif; }
+  #bar { display: flex; gap: .4em; align-items: center; padding: .35em .8em;
+         border-bottom: 1px solid var(--line); font-size: .82rem; }
+  #bar .name { font-weight: 700; letter-spacing: .04em; margin-right: .8em; }
+  #bar button { font: inherit; border: 1px solid var(--line); background: none; color: inherit;
+                padding: .25em .9em; border-radius: 4px; cursor: pointer; }
+  #bar button.on { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  #views { flex: 1; position: relative; }
+  #views iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: none; }
+  #views iframe.on { display: block; }
+  #nodeck { display: none; padding: 3em 2em; max-width: 34rem; margin: 0 auto;
+            font-family: Georgia, serif; font-size: 1.05rem; line-height: 1.6; }
+  #nodeck.on { display: block; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <span class="name" id="pname">provludo</span>
+  <button id="btn-slides"></button>
+  <button id="btn-text"></button>
+</div>
+<div id="views">
+  <iframe id="if-slides"></iframe>
+  <iframe id="if-text"></iframe>
+  <div id="nodeck"></div>
+</div>
+<script type="module">
+import { t } from "/__provludo/i18n.js";
+
+const $ = s => document.querySelector(s);
+$("#btn-slides").textContent = t("wrapper.slides");
+$("#btn-text").textContent = t("wrapper.text");
+$("#nodeck").textContent = t("wrapper.noDeck");
+
+const KEY = "provludo-view:" + location.pathname;
+let manifest = { hasDeck: false, name: "provludo" };
+try { manifest = await (await fetch("api/manifest")).json(); } catch {}
+$("#pname").textContent = manifest.name || "provludo";
+document.title = (manifest.name ? manifest.name + " — " : "") + "provludo";
+
+const frames = { slides: $("#if-slides"), text: $("#if-text") };
+const loaded = { slides: false, text: false };
+
+function show(view) {
+  if (view === "slides" && !manifest.hasDeck) view = "text";
+  for (const v of ["slides", "text"]) {
+    const on = v === view;
+    $("#btn-" + v).classList.toggle("on", on);
+    frames[v].classList.toggle("on", on && (v !== "slides" || manifest.hasDeck));
+  }
+  $("#nodeck").classList.toggle("on", view === "slides" && !manifest.hasDeck);
+  if (view !== "slides" || manifest.hasDeck) {
+    if (!loaded[view]) { frames[view].src = view + "/"; loaded[view] = true; }  // lazy
+  }
+  try { localStorage.setItem(KEY, view); } catch {}
+}
+
+$("#btn-slides").addEventListener("click", () => {
+  if (!manifest.hasDeck) {
+    /* still switch: shows the explanation instead of an empty frame */
+    for (const v of ["slides", "text"]) $("#btn-" + v).classList.toggle("on", v === "slides");
+    frames.text.classList.remove("on");
+    $("#nodeck").classList.add("on");
+    return;
+  }
+  show("slides");
+});
+$("#btn-text").addEventListener("click", () => { $("#nodeck").classList.remove("on"); show("text"); });
+
+let initial = "slides";
+try { initial = localStorage.getItem(KEY) || "slides"; } catch {}
+show(initial);
+</script>
+</body>
+</html>

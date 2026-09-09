@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>provludo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗂</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #faf7f1;
+    --ink: #2b2620;
+    --muted: #8d8577;
+    --line: #d9d2c4;
+    --accent: #7d5a3c;
+    --sticky: #f6ecc8;
+    --sticky-edge: #e3d49a;
+    --warn: #b5432e;
+    --serif: "Alegreya", Georgia, "Times New Roman", serif;
+    --sans: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #211e1a;
+      --ink: #e8e2d6;
+      --muted: #948b7b;
+      --line: #423c33;
+      --accent: #c9a175;
+      --sticky: #38321f;
+      --sticky-edge: #5a4f2c;
+      --warn: #e07a5f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.55;
+  }
+
+  /* ── top bar ─────────────────────────────────── */
+  #topbar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: baseline; gap: 1em;
+    padding: .5em 1.2em;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--sans); font-size: .78rem;
+    color: var(--muted);
+  }
+  #topbar .brand { font-weight: 700; letter-spacing: .04em; color: var(--ink); }
+  #topbar .status { margin-left: auto; }
+  #topbar .status.dirty::before { content: "● "; color: var(--accent); }
+  #stylebtn.full { color: var(--accent); font-weight: 700; }
+
+  /* ── style panel ─────────────────────────────── */
+  #stylepanel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 50;
+    width: min(28rem, 92vw);
+    background: var(--paper); border-left: 1px solid var(--line);
+    box-shadow: -8px 0 28px rgba(0,0,0,.15);
+    display: none; flex-direction: column; padding: 1em 1.2em 1.2em;
+    font-family: var(--sans);
+  }
+  #stylepanel.on { display: flex; }
+  #stylepanel header { display: flex; align-items: baseline; justify-content: space-between;
+                       font-weight: 700; margin-bottom: .3em; }
+  #stylepanel .hint { font-size: .78rem; color: var(--muted); margin: 0 0 .8em;
+                      line-height: 1.45; }
+  #stylepanel textarea {
+    flex: 1; resize: none; outline: none;
+    border: 1px solid var(--line); border-radius: 4px;
+    background: transparent; color: var(--ink);
+    font-family: var(--serif); font-size: .95rem; line-height: 1.55;
+    padding: .6em .8em;
+  }
+  #stylepanel textarea:focus { border-color: var(--accent); }
+
+  #banner {
+    display: none; position: sticky; top: 2.2em; z-index: 29;
+    padding: .6em 1.2em; font-family: var(--sans); font-size: .85rem;
+    background: var(--sticky); border-bottom: 1px solid var(--sticky-edge);
+  }
+  #banner.on { display: flex; gap: 1em; align-items: center; }
+  #banner button { font-size: .8rem; }
+
+  /* ── column ──────────────────────────────────── */
+  #deck { max-width: 68rem; margin: 0 auto; padding: 1.5em 2.5em 45vh 4em; }
+  @media (max-width: 700px) { #deck { padding: 1em .8em 40vh .8em; } }
+
+  /* ── slide and its rule ──────────────────────── */
+  .slide { position: relative; padding: .2em 0 1.4em; }
+  .slide-bar {
+    display: flex; align-items: center; gap: .6em;
+    font-family: var(--sans); font-size: .72rem; color: var(--muted);
+    border-top: 1.5px solid var(--line);
+    padding: .35em 0 .6em; margin-top: .4em;
+    user-select: none;
+  }
+  .slide:first-child .slide-bar { border-top: none; }
+  .slide-bar .nr { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .slide-bar .susp { color: var(--warn); font-weight: 700; letter-spacing: .06em;
+                     text-transform: uppercase; font-size: .68rem; }
+  .slide-bar .app { color: var(--accent); font-weight: 700; letter-spacing: .06em;
+                    text-transform: uppercase; font-size: .68rem; }
+  .slide.appendix { border-left: 3px solid var(--accent); padding-left: .8em; margin-left: -.8em; }
+  .slide.suspended .blk, .slide.suspended > .note, .slide.suspended .adders {
+    opacity: .38; filter: grayscale(.7);
+  }
+  .slide-bar .ctl { visibility: hidden; display: flex; gap: .15em; }
+  .slide:hover .slide-bar .ctl { visibility: visible; }
+
+  /* ── blocks ──────────────────────────────────── */
+  .blk { position: relative; margin: .35em 0; border-radius: 4px; }
+  .blk:hover { background: color-mix(in srgb, var(--line) 26%, transparent); }
+  .blk-text {
+    outline: none; white-space: pre-wrap; word-wrap: break-word;
+    padding: .15em .4em; min-height: 1.4em; border-radius: 4px;
+  }
+  .blk-text:focus { background: color-mix(in srgb, var(--line) 38%, transparent); }
+  .blk-text:empty::before { content: "…"; color: var(--muted); }
+  .blk.h1 .blk-text { font-size: 1.5em; font-weight: 700; line-height: 1.25; }
+  .blk.h2 .blk-text { font-size: 1.2em; font-weight: 700; line-height: 1.3; }
+  .blk.tbl .blk-text { overflow-x: auto; }
+  .blk.tbl .blk-text[data-raw] {
+    font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: .72em; line-height: 1.5;
+    white-space: pre;
+  }
+  .blk-text table { border-collapse: collapse; margin: .15em 0; font-size: .85em; line-height: 1.4; }
+  .blk-text th, .blk-text td { border: 1px solid var(--line); padding: .3em .7em; text-align: left; }
+  .blk-text th {
+    font-family: var(--sans); font-size: .82em; letter-spacing: .04em;
+    background: color-mix(in srgb, var(--line) 32%, transparent);
+  }
+  .blk-text code {
+    font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: .82em; background: color-mix(in srgb, var(--line) 45%, transparent);
+    padding: 0 .25em; border-radius: 3px;
+  }
+  .blk-text .link { color: var(--accent); text-decoration: underline dotted; }
+
+  .blk .ctl {
+    position: absolute; top: 0; right: 100%; margin-right: .35em;
+    display: none; flex-direction: row; gap: .1em;
+  }
+  .blk:hover > .ctl, .blk:focus-within > .ctl { display: flex; }
+  .handle { cursor: grab; color: var(--muted); padding: .1em .15em;
+            font-size: .8rem; user-select: none; }
+  .handle:active { cursor: grabbing; }
+
+  button.mini {
+    font-family: var(--sans); font-size: .72rem; line-height: 1;
+    border: none; background: none; color: var(--muted);
+    padding: .25em .3em; cursor: pointer; border-radius: 3px;
+  }
+  button.mini:hover { color: var(--ink); background: var(--line); }
+  button.mini.warn:hover { color: #fff; background: var(--warn); }
+  button.plain {
+    font-family: var(--sans); font-size: .78rem;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+    padding: .3em .8em; cursor: pointer; border-radius: 4px;
+  }
+  button.plain:hover { border-color: var(--accent); }
+
+  /* image */
+  .blk.img figure { margin: .2em .4em; }
+  .blk.img img { max-width: 100%; max-height: 320px; display: block;
+                 border: 1px solid var(--line); border-radius: 3px; }
+  .blk.img figcaption { font-family: var(--sans); font-size: .72rem;
+                        color: var(--muted); padding-top: .25em; }
+  .blk.img .missing { font-family: var(--sans); font-size: .8rem; color: var(--warn);
+                      border: 1px dashed var(--warn); border-radius: 3px;
+                      padding: .8em; }
+
+  /* suggestion sticky note */
+  .note {
+    display: flex; align-items: baseline; gap: .5em;
+    margin: .15em .4em .15em 1.6em; padding: .35em .6em;
+    background: var(--sticky); border: 1px solid var(--sticky-edge);
+    border-left: 3px solid var(--sticky-edge); border-radius: 3px;
+    font-family: var(--sans); font-size: .82rem; line-height: 1.4;
+  }
+  .note .quote { font-style: italic; color: var(--muted); flex-shrink: 0;
+                 max-width: 38%; overflow: hidden; text-overflow: ellipsis;
+                 white-space: nowrap; }
+  .note .body { outline: none; flex: 1; min-width: 4em; }
+  .note .body:empty::before { content: attr(data-ph); color: var(--muted); }
+  .note button.mini { align-self: center; }
+
+  /* slide footer: block adders */
+  .adders { display: flex; gap: .8em; padding: .2em .4em; opacity: 0; }
+  .slide:hover .adders, .slide:focus-within .adders { opacity: 1; }
+  .adders button.mini { font-size: .74rem; }
+
+  /* suggestion button shown on selection */
+  #suggestbtn {
+    position: absolute; z-index: 40; display: none;
+    font-family: var(--sans); font-size: .76rem;
+    background: var(--ink); color: var(--paper);
+    border: none; border-radius: 4px; padding: .35em .7em; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+
+  /* drop target indicators */
+  .blk.dnd-before { box-shadow: 0 -2px 0 0 var(--accent); }
+  .slide.dnd-into { outline: 2px dashed var(--accent); outline-offset: 2px; }
+
+  /* ── TOC: left sidebar with slide list ───────── */
+  #toc {
+    position: fixed; left: 0; top: 2.4em; bottom: 0; width: 15rem; z-index: 20;
+    overflow-y: auto; padding: .9em .6em 2em;
+    border-right: 1px solid var(--line);
+    background: color-mix(in srgb, var(--paper) 96%, transparent);
+    font-family: var(--sans); font-size: .8rem;
+  }
+  #toc .toc-h { font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+                color: var(--muted); font-size: .66rem; margin: 0 .5em .55em; }
+  #toc ol { list-style: none; margin: 0; padding: 0; }
+  #toc a {
+    display: block; padding: .3em .5em; border-radius: 4px; cursor: pointer;
+    color: var(--ink); text-decoration: none; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #toc a:hover { background: color-mix(in srgb, var(--line) 40%, transparent); }
+  #toc a.current { background: var(--sticky); font-weight: 700; }
+  #toc a.susp { color: var(--muted); font-style: italic; }
+  #toc a .n { color: var(--muted); font-weight: 700; margin-right: .45em; font-size: .9em; }
+  #deck { margin-left: 16rem; }
+  @media (max-width: 900px) { #toc { display: none; } #deck { margin-left: auto; } }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="brand">provludo</span>
+  <span id="file"></span>
+  <span id="counter"></span>
+  <button class="mini" id="stylebtn"></button>
+  <button class="mini" id="helpbtn">?</button>
+  <span class="status" id="status"></span>
+</div>
+<div id="stylepanel">
+  <header><span id="stylepanel-title"></span> <button class="mini" id="styleclose">✕</button></header>
+  <p class="hint" id="stylehint"></p>
+  <textarea id="styleta"></textarea>
+</div>
+<div id="banner"></div>
+<aside id="toc"><div class="toc-h" id="toc-header"></div><ol id="toc-list"></ol></aside>
+<div id="deck"></div>
+<button id="suggestbtn"></button>
+
+<script type="module">
+"use strict";
+import { parseDraft, serializeDraft, blockKind, makeBlock, slideLabel, RE }
+  from "/__provludo/format.js";
+import { t, getLang, extendDict } from "/__provludo/i18n.js";
+
+/* ══ i18n dictionary (editor UI) ════════════════════ */
+extendDict({
+  en: {
+    "editor.loading": "loading…",
+    "editor.edited": "editing…",
+    "editor.saving": "saving…",
+    "editor.saved": "saved ✓",
+    "editor.saveError": "save failed!",
+    "editor.noConnection": "no connection to the server",
+    "editor.conflict": "conflict",
+    "editor.refreshed": "refreshed from disk",
+    "editor.cantConnect": "cannot reach the provludo server",
+    "editor.slide.one": "1 slide",
+    "editor.slide.many": "{n} slides",
+    "editor.suspAbbr": " + {n} susp.",
+    "editor.styleBtn": "🎨 style",
+    "editor.styleBtnTitle": "style guidelines for the final presentation (not a slide)",
+    "editor.stylePanelTitle": "Presentation style",
+    "editor.close": "close",
+    "editor.styleHint": "Guidelines for your AI agent when it generates the final presentation (colors, fonts, framework, tone…). Not part of the slide content — they live in the file as a <code>&lt;!-- style: … --&gt;</code> comment at the top.",
+    "editor.stylePlaceholder": "e.g. reveal.js, dark background, large serif type, minimal text per slide…",
+    "editor.helpTitle": "show the tutorial",
+    "editor.tocHeader": "Slides",
+    "editor.emptySlide": "(empty slide)",
+    "editor.suspSuffix": " (susp.)",
+    "editor.slideN": "⠿ Slide {n}",
+    "editor.dragSlideTitle": "drag to move the slide",
+    "editor.suspendedLabel": "suspended",
+    "editor.appendixLabel": "📎 appendix",
+    "editor.slideUp": "move slide up",
+    "editor.slideDown": "move slide down",
+    "editor.movePos": "⇅ position",
+    "editor.movePosTitle": "move slide to a given number",
+    "editor.movePosPrompt": "Move slide {n} to position (1–{max}):",
+    "editor.slideNote": "note for the whole slide",
+    "editor.addSlide": "＋ slide",
+    "editor.addSlideTitle": "insert a new slide below",
+    "editor.restore": "▶ restore",
+    "editor.restoreTitle": "restore the slide to the presentation",
+    "editor.suspend": "⏸ suspend",
+    "editor.suspendTitle": "suspend the slide (stays in the file, the AI agent skips it)",
+    "editor.appendixOn": "📎 appendix ✓",
+    "editor.appendixOff": "📎 appendix",
+    "editor.appendixOnTitle": "remove the appendix mark",
+    "editor.appendixOffTitle": "mark as appendix material (moved to the end only when the deck is generated)",
+    "editor.deleteSlideTitle": "delete the slide permanently",
+    "editor.deleteSlideConfirm": "Delete slide {n} with all its content?",
+    "editor.addText": "＋ text",
+    "editor.addTextTitle": "add a text block",
+    "editor.addImage": "＋ image",
+    "editor.addImageTitle": "add an image",
+    "editor.addTable": "＋ table",
+    "editor.addTableTitle": "add a table",
+    "editor.addComment": "＋ comment",
+    "editor.addCommentTitle": "suggestion for the whole slide",
+    "editor.dragTitle": "drag",
+    "editor.blockUp": "up (at the edge — into the previous slide)",
+    "editor.blockDown": "down (at the edge — into the next slide)",
+    "editor.blockNote": "suggestion for this block",
+    "editor.deleteBlock": "delete block",
+    "editor.missingImage": "missing image: {p}",
+    "editor.editPath": "✎ path",
+    "editor.editPathTitle": "change the image path",
+    "editor.imagePathPrompt": "Image path or URL:",
+    "editor.imageAddPrompt": "Image path (relative to the draft file) or URL:",
+    "editor.imageSaveFailed": "Could not save the image.",
+    "editor.notePlaceholder": "what to change?",
+    "editor.deleteNote": "delete suggestion",
+    "editor.suggestBtn": "💬 suggest",
+    "editor.tableTemplate": "| Column | Column |\n| --- | --- |\n|  |  |",
+    "editor.conflictMsg": "The file changed on disk (your AI agent?) and you have unsaved changes.",
+    "editor.loadDisk": "Load the disk version",
+    "editor.overwriteMine": "Overwrite with my version",
+  },
+  pl: {
+    "editor.loading": "wczytywanie…",
+    "editor.edited": "edytowano…",
+    "editor.saving": "zapisywanie…",
+    "editor.saved": "zapisano ✓",
+    "editor.saveError": "błąd zapisu!",
+    "editor.noConnection": "brak połączenia z serwerem",
+    "editor.conflict": "konflikt",
+    "editor.refreshed": "odświeżono z dysku",
+    "editor.cantConnect": "nie mogę połączyć się z serwerem provludo",
+    "editor.slide.one": "1 slajd",
+    "editor.slide.many": "{n} slajdów",
+    "editor.suspAbbr": " + {n} zaw.",
+    "editor.styleBtn": "🎨 styl",
+    "editor.styleBtnTitle": "wytyczne stylu dla finalnej prezentacji (nie są slajdem)",
+    "editor.stylePanelTitle": "Styl prezentacji",
+    "editor.close": "zamknij",
+    "editor.styleHint": "Wytyczne dla agenta AI na etap generowania finalnej prezentacji (kolorystyka, czcionki, framework, ton…). Nie są częścią treści slajdów — w pliku żyją jako komentarz <code>&lt;!-- style: … --&gt;</code> na górze.",
+    "editor.stylePlaceholder": "np. reveal.js, ciemne tło, duża czcionka szeryfowa, minimum tekstu na slajdzie…",
+    "editor.helpTitle": "pokaż samouczek",
+    "editor.tocHeader": "Slajdy",
+    "editor.emptySlide": "(pusty slajd)",
+    "editor.suspSuffix": " (zaw.)",
+    "editor.slideN": "⠿ Slajd {n}",
+    "editor.dragSlideTitle": "przeciągnij, aby przenieść slajd",
+    "editor.suspendedLabel": "zawieszony",
+    "editor.appendixLabel": "📎 materiały dodatkowe",
+    "editor.slideUp": "przesuń slajd wyżej",
+    "editor.slideDown": "przesuń slajd niżej",
+    "editor.movePos": "⇅ pozycja",
+    "editor.movePosTitle": "przenieś slajd na podany numer",
+    "editor.movePosPrompt": "Przenieś slajd {n} na pozycję (1–{max}):",
+    "editor.slideNote": "notatka do całego slajdu",
+    "editor.addSlide": "＋ slajd",
+    "editor.addSlideTitle": "wstaw nowy slajd poniżej",
+    "editor.restore": "▶ przywróć",
+    "editor.restoreTitle": "przywróć slajd do prezentacji",
+    "editor.suspend": "⏸ zawieś",
+    "editor.suspendTitle": "zawieś slajd (zostaje w pliku, agent AI go pominie)",
+    "editor.appendixOn": "📎 dodatkowe ✓",
+    "editor.appendixOff": "📎 dodatkowe",
+    "editor.appendixOnTitle": "zdejmij oznaczenie materiałów dodatkowych",
+    "editor.appendixOffTitle": "oznacz jako materiały dodatkowe (trafi na koniec dopiero przy generowaniu)",
+    "editor.deleteSlideTitle": "usuń slajd na stałe",
+    "editor.deleteSlideConfirm": "Usunąć slajd {n} z całą zawartością?",
+    "editor.addText": "＋ tekst",
+    "editor.addTextTitle": "dodaj blok tekstu",
+    "editor.addImage": "＋ obrazek",
+    "editor.addImageTitle": "dodaj obrazek",
+    "editor.addTable": "＋ tabelka",
+    "editor.addTableTitle": "dodaj tabelkę",
+    "editor.addComment": "＋ komentarz",
+    "editor.addCommentTitle": "sugestia do całego slajdu",
+    "editor.dragTitle": "przeciągnij",
+    "editor.blockUp": "wyżej (na końcu — do poprzedniego slajdu)",
+    "editor.blockDown": "niżej (na końcu — do następnego slajdu)",
+    "editor.blockNote": "sugestia do tego bloku",
+    "editor.deleteBlock": "usuń blok",
+    "editor.missingImage": "brak obrazka: {p}",
+    "editor.editPath": "✎ ścieżka",
+    "editor.editPathTitle": "zmień ścieżkę obrazka",
+    "editor.imagePathPrompt": "Ścieżka lub URL obrazka:",
+    "editor.imageAddPrompt": "Ścieżka (względem pliku szkicu) lub URL obrazka:",
+    "editor.imageSaveFailed": "Nie udało się zapisać obrazka.",
+    "editor.notePlaceholder": "co zmienić?",
+    "editor.deleteNote": "usuń sugestię",
+    "editor.suggestBtn": "💬 sugestia",
+    "editor.tableTemplate": "| Kolumna | Kolumna |\n| --- | --- |\n|  |  |",
+    "editor.conflictMsg": "Plik zmienił się na dysku (agent AI?), a masz niezapisane zmiany.",
+    "editor.loadDisk": "Wczytaj wersję z dysku",
+    "editor.overwriteMine": "Nadpisz moją wersją",
+  },
+});
+
+/* templated t(): fmt("editor.slideN", {n: 3}) */
+const fmt = (key, vars) =>
+  Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), t(key));
+
+/* ══ state ══════════════════════════════════════════ */
+let state = { slides: [], style: "", mtime: 0, name: "" };
+let dirty = false, saving = false, saveTimer = null;
+const undoStack = [];
+
+const $ = s => document.querySelector(s);
+const deck = $("#deck");
+
+/* ══ static texts (filled from the dictionary) ══════ */
+document.documentElement.lang = getLang();
+$("#stylebtn").textContent = t("editor.styleBtn");
+$("#stylebtn").title = t("editor.styleBtnTitle");
+$("#helpbtn").title = t("editor.helpTitle");
+$("#stylepanel-title").textContent = t("editor.stylePanelTitle");
+$("#styleclose").title = t("editor.close");
+$("#stylehint").innerHTML = t("editor.styleHint");
+$("#styleta").placeholder = t("editor.stylePlaceholder");
+$("#toc-header").textContent = t("editor.tocHeader");
+$("#suggestbtn").textContent = t("editor.suggestBtn");
+$("#status").textContent = t("editor.loading");
+
+/* ── Markdown preview: markers visible only in the block being edited ── */
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function mdInline(l) {
+  let h = escapeHtml(l);
+  h = h.replace(/`([^`]+)`/g, "<code>$1</code>");
+  h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  h = h.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+  h = h.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+  h = h.replace(/(^|[^_\w])_([^_\n]+)_(?![\w_])/g, "$1<em>$2</em>");
+  h = h.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span class="link" title="$2">$1</span>');
+  return h;
+}
+
+function renderTable(text) {
+  const rows = text.trim().split("\n").map(l => l.trim()).filter(Boolean);
+  const cells = l => l.replace(/^\|/, "").replace(/\|$/, "").split("|")
+                      .map(c => mdInline(c.trim()));
+  let html = "<table><thead><tr>"
+    + cells(rows[0]).map(c => `<th>${c}</th>`).join("")
+    + "</tr></thead><tbody>";
+  for (const r of rows.slice(2))
+    html += "<tr>" + cells(r).map(c => `<td>${c}</td>`).join("") + "</tr>";
+  return html + "</tbody></table>";
+}
+
+function mdRender(text, kind) {
+  if (kind === "table") return renderTable(text);
+  return text.split("\n").map(line => {
+    let l = line;
+    if (kind === "h1" || kind === "h2") l = l.replace(/^#{1,6}\s+/, "");
+    l = l.replace(/^(\s*)[-*]\s+/, "$1• ");
+    return mdInline(l);
+  }).join("\n");
+}
+
+function caretOffset(el) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || !el.contains(sel.anchorNode)) return 0;
+  const r = sel.getRangeAt(0);
+  const pre = r.cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(r.startContainer, r.startOffset);
+  return pre.toString().length;
+}
+function setCaret(el, off) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let node, rem = off;
+  const sel = window.getSelection(), r = document.createRange();
+  while ((node = walker.nextNode())) {
+    if (rem <= node.length) { r.setStart(node, rem); r.collapse(true);
+      sel.removeAllRanges(); sel.addRange(r); return; }
+    rem -= node.length;
+  }
+  r.selectNodeContents(el); r.collapse(false);
+  sel.removeAllRanges(); sel.addRange(r);
+}
+
+/* ══ render ═════════════════════════════════════════ */
+function render() {
+  deck.innerHTML = "";
+  state.slides.forEach((slide, si) => {
+    const el = document.createElement("section");
+    el.className = "slide" + (slide.suspended ? " suspended" : "") + (slide.appendix ? " appendix" : "");
+    el.dataset.si = si;
+
+    const bar = document.createElement("div");
+    bar.className = "slide-bar";
+    bar.innerHTML = `<span class="nr" title="${escapeHtml(t("editor.dragSlideTitle"))}">${escapeHtml(fmt("editor.slideN", { n: si + 1 }))}</span>`
+      + (slide.suspended ? `<span class="susp">${escapeHtml(t("editor.suspendedLabel"))}</span>` : "")
+      + (slide.appendix ? `<span class="app">${escapeHtml(t("editor.appendixLabel"))}</span>` : "")
+      + `<span class="ctl"></span>`;
+    bar.draggable = true;
+    bar.style.cursor = "grab";
+    bar.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", `S:${si}`);
+      e.dataTransfer.effectAllowed = "move";
+    });
+    const ctl = bar.querySelector(".ctl");
+    ctl.append(
+      mini("↑", t("editor.slideUp"), () => moveSlide(si, -1)),
+      mini("↓", t("editor.slideDown"), () => moveSlide(si, 1)),
+      mini(t("editor.movePos"), t("editor.movePosTitle"), () => {
+        const n = parseInt(prompt(fmt("editor.movePosPrompt", { n: si + 1, max: state.slides.length })), 10);
+        if (n >= 1 && n <= state.slides.length) moveSlideTo(si, n - 1, true);
+      }),
+      mini("💬", t("editor.slideNote"), () => addComment(si, null, "")),
+      mini(t("editor.addSlide"), t("editor.addSlideTitle"), () => addSlide(si)),
+      mini(slide.suspended ? t("editor.restore") : t("editor.suspend"),
+           slide.suspended ? t("editor.restoreTitle") : t("editor.suspendTitle"),
+           () => toggleSuspend(si), !slide.suspended),
+      mini(slide.appendix ? t("editor.appendixOn") : t("editor.appendixOff"),
+           slide.appendix ? t("editor.appendixOnTitle") : t("editor.appendixOffTitle"),
+           () => toggleAppendix(si)),
+      mini("✕", t("editor.deleteSlideTitle"), () => deleteSlide(si), true),
+    );
+    el.append(bar);
+
+    slide.comments.forEach((c, ci) => el.append(noteEl(c, () => {
+      pushUndo(); slide.comments.splice(ci, 1); render(); scheduleSave();
+    })));
+
+    slide.blocks.forEach((b, bi) => el.append(blockEl(b, si, bi)));
+
+    const add = document.createElement("div");
+    add.className = "adders";
+    add.append(
+      mini(t("editor.addText"), t("editor.addTextTitle"), () => addTextBlock(si)),
+      mini(t("editor.addImage"), t("editor.addImageTitle"), () => addImageBlock(si)),
+      mini(t("editor.addTable"), t("editor.addTableTitle"), () => addTableBlock(si)),
+      mini(t("editor.addComment"), t("editor.addCommentTitle"), () => addComment(si, null, "")),
+    );
+    el.append(add);
+
+    el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("dnd-into"); });
+    el.addEventListener("dragleave", () => el.classList.remove("dnd-into"));
+    el.addEventListener("drop", e => { e.preventDefault(); el.classList.remove("dnd-into");
+                                       dropBlock(e, si, slide.blocks.length); });
+    deck.append(el);
+  });
+  const susp = state.slides.filter(s => s.suspended).length;
+  const act = state.slides.length - susp;
+  $("#counter").textContent =
+    (act === 1 ? t("editor.slide.one") : fmt("editor.slide.many", { n: act }))
+    + (susp ? fmt("editor.suspAbbr", { n: susp }) : "");
+  $("#file").textContent = state.name;
+  document.title = `${state.name} — provludo`;
+  buildTOC();
+}
+
+/* ══ TOC (left sidebar) ═════════════════════════════ */
+function buildTOC() {
+  const ol = $("#toc-list");
+  if (!ol) return;
+  ol.innerHTML = "";
+  state.slides.forEach((slide, si) => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    if (slide.suspended) a.className = "susp";
+    const n = document.createElement("span");
+    n.className = "n"; n.textContent = si + 1;
+    a.append(n, document.createTextNode(slideLabel(slide, t("editor.emptySlide"))
+      + (slide.suspended ? t("editor.suspSuffix") : "") + (slide.appendix ? " 📎" : "")));
+    a.addEventListener("click", () => {
+      const el = deck.querySelector(`.slide[data-si="${si}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    li.append(a);
+    ol.append(li);
+  });
+  updateTOCCurrent();
+}
+function currentSlideIdx() {
+  const slides = deck.querySelectorAll(".slide");
+  const y = 60; // the slide crossing the line just below the bar is "current"
+  let cur = 0;
+  for (let i = 0; i < slides.length; i++) {
+    const r = slides[i].getBoundingClientRect();
+    if (r.top <= y && r.bottom > y) { cur = i; break; }
+    if (r.top > y) break;   // we're below the line — the previous one stays
+    cur = i;
+  }
+  return cur;
+}
+function updateTOCCurrent() {
+  const ol = $("#toc-list");
+  if (!ol) return;
+  const links = ol.querySelectorAll("a");
+  const cur = currentSlideIdx();
+  links.forEach((a, i) => a.classList.toggle("current", i === cur));
+}
+
+/* ══ slide position in URL (#/N) + localStorage — reload doesn't jump to top ══ */
+const POS_KEY = "provludo-pos:" + location.pathname;
+function savePos() {
+  const i = currentSlideIdx();
+  try { localStorage.setItem(POS_KEY, String(i)); } catch (e) {}
+  try { history.replaceState(null, "", "#/" + (i + 1)); } catch (e) {}
+}
+function restorePos() {
+  let i = -1;
+  const m = location.hash.match(/^#\/?(\d+)/);
+  if (m) i = parseInt(m[1], 10) - 1;
+  else { const s = localStorage.getItem(POS_KEY); if (s != null) i = parseInt(s, 10); }
+  if (i > 0) {
+    const el = deck.querySelector(`.slide[data-si="${i}"]`);
+    if (el) el.scrollIntoView({ block: "start" });
+  }
+  updateTOCCurrent();
+}
+let tocRaf = 0, posT = 0;
+window.addEventListener("scroll", () => {
+  if (!tocRaf) tocRaf = requestAnimationFrame(() => { tocRaf = 0; updateTOCCurrent(); });
+  clearTimeout(posT); posT = setTimeout(savePos, 300);
+}, { passive: true });
+
+function blockEl(b, si, bi) {
+  const kind = b.type === "image" ? "image" : blockKind(b.text);
+  const wrap = document.createElement("div");
+  wrap.className = "blk " + ({ image: "img", table: "tbl", h1: "h1", h2: "h2", text: "" })[kind];
+  wrap.dataset.si = si; wrap.dataset.bi = bi;
+  wrap.dataset.kind = kind;
+
+  const ctl = document.createElement("span");
+  ctl.className = "ctl";
+  const handle = document.createElement("span");
+  handle.className = "handle"; handle.textContent = "⠿"; handle.title = t("editor.dragTitle");
+  handle.draggable = true;
+  handle.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text/plain", `${si}:${bi}`);
+    e.dataTransfer.effectAllowed = "move";
+  });
+  ctl.append(
+    handle,
+    mini("↑", t("editor.blockUp"), () => moveBlock(si, bi, -1)),
+    mini("↓", t("editor.blockDown"), () => moveBlock(si, bi, 1)),
+    mini("💬", t("editor.blockNote"), () => addComment(si, bi, "")),
+    mini("✕", t("editor.deleteBlock"), () => deleteBlock(si, bi), true),
+  );
+  wrap.append(ctl);
+
+  if (kind === "image") {
+    const m = b.text.trim().match(RE.IMG);
+    const fig = document.createElement("figure");
+    const img = document.createElement("img");
+    img.src = /^https?:/.test(m[2]) ? m[2] : "files/" + encodeURI(m[2]);
+    img.alt = m[1];
+    img.onerror = () => {
+      img.remove();
+      const missing = document.createElement("div");
+      missing.className = "missing"; missing.textContent = fmt("editor.missingImage", { p: m[2] });
+      fig.prepend(missing);
+    };
+    const cap = document.createElement("figcaption");
+    cap.textContent = `🖼 ${m[2]}${m[1] ? " — " + m[1] : ""}  `;
+    const edit = mini(t("editor.editPath"), t("editor.editPathTitle"), () => {
+      const p = prompt(t("editor.imagePathPrompt"), m[2]);
+      if (p) { pushUndo(); b.text = `![${m[1]}](${p.trim()})`; render(); scheduleSave(); }
+    });
+    cap.append(edit);
+    fig.append(img, cap);
+    wrap.append(fig);
+  } else {
+    const div = document.createElement("div");
+    div.className = "blk-text";
+    div.contentEditable = "plaintext-only";
+    if (div.contentEditable !== "plaintext-only") div.contentEditable = "true";
+    /* unfocused: rendered preview; while editing: raw Markdown */
+    div.innerHTML = mdRender(b.text, kind);
+    div.addEventListener("focus", () => {
+      if (div.dataset.raw) return;
+      const off = caretOffset(div);
+      div.dataset.raw = "1";
+      div.textContent = b.text;
+      setCaret(div, Math.min(off, b.text.length));
+    });
+    div.addEventListener("input", () => {
+      b.text = div.innerText.replace(/\n+$/, "");
+      scheduleSave();
+    });
+    div.addEventListener("blur", () => {
+      delete div.dataset.raw;
+      normalizeBlock(si, bi);
+      if (deck.contains(div)) div.innerHTML = mdRender(b.text, kind);
+    });
+    div.addEventListener("paste", e => {
+      if (div.contentEditable === "true") {  /* fallback without plaintext-only */
+        e.preventDefault();
+        document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
+      }
+    });
+    wrap.append(div);
+  }
+
+  b.comments.forEach((c, ci) => wrap.append(noteEl(c, () => {
+    pushUndo(); b.comments.splice(ci, 1); render(); scheduleSave();
+  })));
+
+  wrap.addEventListener("dragover", e => { e.preventDefault(); e.stopPropagation();
+                                           wrap.classList.add("dnd-before"); });
+  wrap.addEventListener("dragleave", () => wrap.classList.remove("dnd-before"));
+  wrap.addEventListener("drop", e => { e.preventDefault(); e.stopPropagation();
+                                       wrap.classList.remove("dnd-before");
+                                       dropBlock(e, si, bi); });
+  return wrap;
+}
+
+function noteEl(c, onDelete) {
+  const n = document.createElement("div");
+  n.className = "note";
+  if (c.quote) {
+    const q = document.createElement("span");
+    q.className = "quote"; q.textContent = `„${c.quote}"`; q.title = c.quote;
+    n.append(q);
+  }
+  const body = document.createElement("span");
+  body.className = "body";
+  body.dataset.ph = t("editor.notePlaceholder");
+  body.contentEditable = "plaintext-only";
+  if (body.contentEditable !== "plaintext-only") body.contentEditable = "true";
+  body.textContent = c.text;
+  body.addEventListener("input", () => { c.text = body.innerText.trim(); scheduleSave(); });
+  n.append(body, mini("✕", t("editor.deleteNote"), onDelete, true));
+  return n;
+}
+
+function mini(label, title, onClick, warn = false) {
+  const btn = document.createElement("button");
+  btn.className = "mini" + (warn ? " warn" : "");
+  btn.textContent = label; btn.title = title;
+  btn.addEventListener("mousedown", e => e.preventDefault()); /* don't steal focus/selection */
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
+/* ══ operations ═════════════════════════════════════ */
+function pushUndo() {
+  undoStack.push(serializeDraft(state.slides, state.style));
+  if (undoStack.length > 100) undoStack.shift();
+}
+
+function moveSlide(si, dir) {
+  const ni = si + dir;
+  if (ni < 0 || ni >= state.slides.length) return;
+  pushUndo();
+  [state.slides[si], state.slides[ni]] = [state.slides[ni], state.slides[si]];
+  render(); scheduleSave();
+}
+
+function moveBlock(si, bi, dir) {
+  pushUndo();
+  const blocks = state.slides[si].blocks;
+  const ni = bi + dir;
+  if (ni >= 0 && ni < blocks.length) {
+    [blocks[bi], blocks[ni]] = [blocks[ni], blocks[bi]];
+  } else if (dir < 0 && si > 0) {
+    state.slides[si - 1].blocks.push(blocks.splice(bi, 1)[0]);
+  } else if (dir > 0 && si < state.slides.length - 1) {
+    state.slides[si + 1].blocks.unshift(blocks.splice(bi, 1)[0]);
+  } else { undoStack.pop(); return; }
+  render(); scheduleSave();
+}
+
+function moveSlideTo(from, to, exact = false) {
+  /* exact=false: "to" is the index of the slide we insert BEFORE (drag&drop);
+     exact=true: "to" is the target list position (prompt) */
+  if (!exact && from < to) to--;
+  to = Math.max(0, Math.min(to, state.slides.length - 1));
+  if (from === to) return;
+  pushUndo();
+  const s = state.slides.splice(from, 1)[0];
+  state.slides.splice(to, 0, s);
+  render(); scheduleSave();
+  focusBlockArea(to);
+}
+
+function dropBlock(e, tsi, tbi) {
+  const data = e.dataTransfer.getData("text/plain");
+  const ms = data.match(/^S:(\d+)$/);
+  if (ms) { moveSlideTo(+ms[1], tsi + (tbi >= state.slides[tsi].blocks.length ? 1 : 0)); return; }
+  const m = data.match(/^(\d+):(\d+)$/);
+  if (!m) return;
+  let [ , ssi, sbi ] = m.map(Number);
+  if (ssi === tsi && (sbi === tbi || sbi + 1 === tbi)) return;
+  pushUndo();
+  const blk = state.slides[ssi].blocks.splice(sbi, 1)[0];
+  if (ssi === tsi && sbi < tbi) tbi--;
+  state.slides[tsi].blocks.splice(Math.min(tbi, state.slides[tsi].blocks.length), 0, blk);
+  render(); scheduleSave();
+}
+
+function deleteBlock(si, bi) {
+  pushUndo();
+  state.slides[si].blocks.splice(bi, 1);
+  render(); scheduleSave();
+}
+
+function toggleSuspend(si) {
+  pushUndo();
+  state.slides[si].suspended = !state.slides[si].suspended;
+  render(); scheduleSave();
+}
+
+function toggleAppendix(si) {
+  // Flag only — do NOT move the slide. Moving to the end (appendix)
+  // happens only when the deck is generated. (Auto-moving was confusing:
+  // the slide "vanished" to the bottom and invited repeated clicking →
+  // several normal slides flagged by accident.)
+  pushUndo();
+  state.slides[si].appendix = !state.slides[si].appendix;
+  render(); scheduleSave();
+}
+
+function deleteSlide(si) {
+  const s = state.slides[si];
+  if ((s.blocks.length || s.comments.length)
+      && !confirm(fmt("editor.deleteSlideConfirm", { n: si + 1 }))) return;
+  pushUndo();
+  state.slides.splice(si, 1);
+  if (!state.slides.length) state.slides.push({ blocks: [], comments: [] });
+  render(); scheduleSave();
+}
+
+function addSlide(si) {
+  pushUndo();
+  state.slides.splice(si + 1, 0, { blocks: [], comments: [] });
+  render(); scheduleSave();
+  focusBlockArea(si + 1);
+}
+
+function addTextBlock(si) {
+  pushUndo();
+  state.slides[si].blocks.push({ type: "text", text: "", comments: [] });
+  render(); scheduleSave();
+  const els = deck.querySelectorAll(`.blk[data-si="${si}"] .blk-text`);
+  if (els.length) els[els.length - 1].focus();
+}
+
+function focusBlockArea(si) {
+  const el = deck.querySelector(`.slide[data-si="${si}"]`);
+  if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function addTableBlock(si) {
+  pushUndo();
+  state.slides[si].blocks.push({ type: "text", comments: [],
+    text: t("editor.tableTemplate") });
+  render(); scheduleSave();
+  const els = deck.querySelectorAll(`.blk[data-si="${si}"] .blk-text`);
+  if (els.length) els[els.length - 1].focus();
+}
+
+function addImageBlock(si) {
+  const p = prompt(t("editor.imageAddPrompt"));
+  if (!p) return;
+  pushUndo();
+  const name = p.trim().split("/").pop().replace(/\.[a-z]+$/i, "");
+  state.slides[si].blocks.push({ type: "image", text: `![${name}](${p.trim()})`, comments: [] });
+  render(); scheduleSave();
+}
+
+function addComment(si, bi, quote) {
+  pushUndo();
+  const c = { quote, text: "" };
+  if (bi === null) state.slides[si].comments.push(c);
+  else state.slides[si].blocks[bi].comments.push(c);
+  render(); scheduleSave();
+  const notes = bi === null
+    ? deck.querySelectorAll(`.slide[data-si="${si}"] > .note .body`)
+    : deck.querySelectorAll(`.blk[data-si="${si}"][data-bi="${bi}"] .note .body`);
+  if (notes.length) notes[notes.length - 1].focus();
+}
+
+/* a blank line inside a block = split into two blocks; drop blocks emptied to zero */
+function normalizeBlock(si, bi) {
+  const b = state.slides[si]?.blocks[bi];
+  if (!b || b.type !== "text") return;
+  if (b.text.trim() === "" && !b.comments.length) { deleteBlock(si, bi); return; }
+  const parts = b.text.split(/\n\s*\n/).map(t => t.trim()).filter(Boolean);
+  if (parts.length > 1) {
+    pushUndo();
+    const fresh = parts.map(makeBlock);
+    fresh[fresh.length - 1].comments = b.comments;
+    state.slides[si].blocks.splice(bi, 1, ...fresh);
+    render(); scheduleSave();
+    return;
+  }
+  /* the content may have changed the block kind (e.g. a table was typed) — refresh */
+  const kind = blockKind(b.text);
+  b.type = kind === "image" ? "image" : "text";
+  const el = deck.querySelector(`.blk[data-si="${si}"][data-bi="${bi}"]`);
+  if (el && el.dataset.kind !== kind) render();
+}
+
+/* ══ style panel ════════════════════════════════════ */
+const stylepanel = $("#stylepanel"), styleta = $("#styleta"), stylebtn = $("#stylebtn");
+stylebtn.addEventListener("click", () => {
+  stylepanel.classList.toggle("on");
+  if (stylepanel.classList.contains("on")) styleta.focus();
+});
+$("#styleclose").addEventListener("click", () => stylepanel.classList.remove("on"));
+styleta.addEventListener("input", () => {
+  state.style = styleta.value;
+  stylebtn.classList.toggle("full", !!state.style.trim());
+  scheduleSave();
+});
+function refreshStyle() {
+  if (document.activeElement !== styleta) styleta.value = state.style;
+  stylebtn.classList.toggle("full", !!state.style.trim());
+}
+
+/* ══ selection → suggestion ═════════════════════════ */
+const suggestbtn = $("#suggestbtn");
+let selTarget = null;
+
+document.addEventListener("selectionchange", () => {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.toString().trim()) { suggestbtn.style.display = "none"; return; }
+  const blk = sel.anchorNode?.parentElement?.closest?.(".blk");
+  if (!blk || !blk.querySelector(".blk-text")) { suggestbtn.style.display = "none"; return; }
+  selTarget = { si: +blk.dataset.si, bi: +blk.dataset.bi, quote: sel.toString().trim() };
+  const r = sel.getRangeAt(0).getBoundingClientRect();
+  suggestbtn.style.left = (window.scrollX + r.left + r.width / 2 - 40) + "px";
+  suggestbtn.style.top = (window.scrollY + r.top - 34) + "px";
+  suggestbtn.style.display = "block";
+});
+suggestbtn.addEventListener("mousedown", e => e.preventDefault());
+suggestbtn.addEventListener("click", () => {
+  if (!selTarget) return;
+  suggestbtn.style.display = "none";
+  addComment(selTarget.si, selTarget.bi, selTarget.quote.slice(0, 200));
+});
+
+/* ══ image paste ════════════════════════════════════ */
+document.addEventListener("paste", async e => {
+  const file = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("image/"));
+  if (!file) return;
+  e.preventDefault();
+  const resp = await fetch("api/image", { method: "POST",
+    headers: { "Content-Type": file.type }, body: file });
+  if (!resp.ok) { alert(t("editor.imageSaveFailed")); return; }
+  const { path } = await resp.json();
+  const blk = document.activeElement?.closest?.(".blk");
+  pushUndo();
+  const fresh = { type: "image", text: `![](${path})`, comments: [] };
+  if (blk) state.slides[+blk.dataset.si].blocks.splice(+blk.dataset.bi + 1, 0, fresh);
+  else state.slides[state.slides.length - 1].blocks.push(fresh);
+  render(); scheduleSave();
+});
+
+/* ══ save / synchronization ═════════════════════════ */
+function setStatus(txt, isDirty) {
+  const el = $("#status");
+  el.textContent = txt;
+  el.classList.toggle("dirty", !!isDirty);
+}
+
+function scheduleSave() {
+  dirty = true;
+  setStatus(t("editor.edited"), true);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 800);
+}
+
+async function save() {
+  if (saving) { scheduleSave(); return; }
+  saving = true; dirty = false;
+  setStatus(t("editor.saving"), true);
+  try {
+    const resp = await fetch("api/draft", { method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: serializeDraft(state.slides, state.style), base_mtime: state.mtime }) });
+    if (resp.status === 409) {
+      const server = await resp.json();
+      showConflict(server);
+    } else if (resp.ok) {
+      state.mtime = (await resp.json()).mtime;
+      if (!dirty) setStatus(t("editor.saved"), false);
+    } else {
+      setStatus(t("editor.saveError"), true);
+    }
+  } catch {
+    setStatus(t("editor.noConnection"), true);
+  } finally {
+    saving = false;
+  }
+}
+
+function showConflict(server) {
+  setStatus(t("editor.conflict"), true);
+  const b = $("#banner");
+  b.className = "on";
+  b.innerHTML = `<span>${escapeHtml(t("editor.conflictMsg"))}</span>`;
+  const load = document.createElement("button");
+  load.className = "plain"; load.textContent = t("editor.loadDisk");
+  load.onclick = () => { adopt(server); b.className = ""; };
+  const overwrite = document.createElement("button");
+  overwrite.className = "plain"; overwrite.textContent = t("editor.overwriteMine");
+  overwrite.onclick = () => { state.mtime = server.mtime; b.className = ""; save(); };
+  b.append(load, overwrite);
+}
+
+function adopt(server) {
+  const p = parseDraft(server.content);
+  state.slides = p.slides;
+  state.style = p.style;
+  state.mtime = server.mtime;
+  state.name = server.name;
+  dirty = false;
+  render();
+  refreshStyle();
+  setStatus(t("editor.saved"), false);
+}
+
+async function refetch() {
+  if (dirty || saving) return;
+  try {
+    const server = await (await fetch("api/draft")).json();
+    if (Math.abs(server.mtime - state.mtime) > 1e-4) {
+      adopt(server); setStatus(t("editor.refreshed"), false);
+    }
+  } catch { /* server temporarily unreachable */ }
+}
+
+/* SSE push; falls back to 3 s polling when EventSource dies */
+let pollTimer = null;
+function startEvents() {
+  let es;
+  try { es = new EventSource("api/events"); } catch { startPolling(); return; }
+  es.addEventListener("draft-changed", e => {
+    const mtime = parseFloat(e.data);
+    if (!Number.isNaN(mtime) && Math.abs(mtime - state.mtime) > 1e-4) refetch();
+  });
+  es.onerror = () => { es.close(); startPolling(); };
+}
+function startPolling() {
+  if (!pollTimer) pollTimer = setInterval(refetch, 3000);
+}
+
+/* ══ keyboard ═══════════════════════════════════════ */
+document.addEventListener("keydown", e => {
+  const inEdit = document.activeElement?.isContentEditable;
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !inEdit) {
+    const prev = undoStack.pop();
+    if (prev) {
+      const p = parseDraft(prev);
+      state.slides = p.slides; state.style = p.style;
+      render(); refreshStyle(); scheduleSave();
+    }
+    e.preventDefault();
+  }
+  if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && inEdit) {
+    const blk = document.activeElement.closest(".blk");
+    if (blk) { moveBlock(+blk.dataset.si, +blk.dataset.bi, e.key === "ArrowUp" ? -1 : 1); e.preventDefault(); }
+  }
+});
+
+window.addEventListener("beforeunload", e => {
+  if (dirty || saving) { e.preventDefault(); e.returnValue = ""; }
+});
+
+/* console debugging handle */
+Object.defineProperty(window, "provludo", {
+  value: { get state() { return state; }, parseDraft, serializeDraft },
+});
+
+/* ══ tour ═══════════════════════════════════════════ */
+$("#helpbtn").addEventListener("click", () => window.provludoTour?.start("editor"));
+
+/* ══ start ══════════════════════════════════════════ */
+(async () => {
+  try {
+    adopt(await (await fetch("api/draft")).json());
+    requestAnimationFrame(restorePos);   // after first render, return to the remembered slide
+  } catch {
+    setStatus(t("editor.cantConnect"), true);
+  }
+  startEvents();
+  try {
+    await import("/__provludo/tour.js");
+    window.provludoTour?.auto("editor");
+  } catch { /* tour not available (yet) — fine */ }
+})();
+</script>
+</body>
+</html>
