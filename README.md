@@ -35,6 +35,11 @@ review the live deck on one side, edit the draft on the other.
 
 ## What it looks like
 
+The deck your agent generates from the draft — an ordinary reveal.js
+presentation, with the review layer riding quietly in the corner:
+
+![The generated reveal.js deck advancing through slides](https://raw.githubusercontent.com/sypianski/provludo/main/docs/deck.gif)
+
 Reviewing the generated deck — comment on a selected fragment, right on
 the live slides; everything lands in a change queue for the agent:
 
