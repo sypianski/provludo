@@ -40,7 +40,10 @@ slides to the end. Write the deck where `provludo.json` points
 
 ## Stage 3 — merging a review
 
-When asked to apply the review: follow the merge cycle in `AGENT.md`
-(apply `<deck-stem>.review.md` to the draft → regenerate the deck →
-clear the queue by writing `{"_resetAt": <unix seconds>}` to
-`<deck-stem>.review.json` and an empty review to the `.md`).
+When asked to apply the review, follow the merge cycle in `AGENT.md` in
+order: (1) snapshot commit if it is a git repo, (2) prepend the current
+`<deck-stem>.review.md` to `<deck-stem>.review.archive.md` under a
+dated heading, (3) apply the queue entries to the draft, (4) regenerate
+the deck, (5) clear the queue (`{"_resetAt": <unix seconds>}` in the
+`.json`, empty heading in the `.md`), (6) apply commit if it is a git
+repo. Steps 1 and 6 are skipped outside a git working tree.

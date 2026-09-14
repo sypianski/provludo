@@ -16,8 +16,10 @@ A provludo project is a directory with `provludo.json`:
 - `deck` is where you put the generated presentation (any HTML framework;
   reveal.js works best with the review layer). Missing deck = not
   generated yet.
-- Review files live next to the deck: `<deck-stem>.review.json` (state)
-  and `<deck-stem>.review.md` (the change queue you read).
+- Review files live next to the deck: `<deck-stem>.review.json` (state),
+  `<deck-stem>.review.md` (the change queue you read), and
+  `<deck-stem>.review.archive.md` (append-only history of applied
+  reviews, written by you — see the merge cycle below).
 
 ## Draft format
 
@@ -83,12 +85,24 @@ numbers shift between regenerations.
 
 When asked to apply the review:
 
-1. Read `<deck-stem>.review.md`; apply every entry to the **draft**.
-2. Regenerate the deck from the updated draft.
-3. **Clear the queue**: overwrite `<deck-stem>.review.json` with
+1. **Snapshot commit** (skip if not a git repo). Stage the draft, deck,
+   `<deck-stem>.review.md`, `<deck-stem>.review.json`, and
+   `<deck-stem>.review.archive.md` (if it exists), then
+   `git commit -m "chore(provludo): snapshot before applying review"`.
+   This gives a clean rollback point before you touch anything.
+2. **Archive the queue.** Prepend the current contents of
+   `<deck-stem>.review.md` to `<deck-stem>.review.archive.md` under a
+   heading `## <YYYY-MM-DD HH:MM>` (append `  ·  before <snapshot-sha>`
+   if you made the snapshot commit in step 1). Create the archive file
+   if it does not yet exist.
+3. Read `<deck-stem>.review.md`; apply every entry to the **draft**.
+4. Regenerate the deck from the updated draft.
+5. **Clear the queue**: overwrite `<deck-stem>.review.json` with
    `{"_resetAt": <current unix seconds>}` and `<deck-stem>.review.md`
    with an empty review (just the heading). The browser overlay watches
    these files and resets itself.
+6. **Apply commit** (skip if not a git repo).
+   `git commit -am "provludo: apply review — <one-line summary>"`.
 
 ## Rules
 
@@ -98,3 +112,7 @@ When asked to apply the review:
 - Don't renumber or reorder slides while merging unless an entry asks.
 - The file format (markers above) is always English, regardless of the
   content language or the UI language the human uses.
+- **Single reviewer per deck.** provludo assumes one human reviews a
+  given deck. Reviewer attribution (`— <name>` on entries) is supported
+  but optional. If several people share a draft, coordinate merges
+  manually — the tool does not resolve concurrent review queues.
