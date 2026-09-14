@@ -1,18 +1,39 @@
 # provludo
 
 **Dress rehearsal for your slides.** A local, zero-dependency web tool
-for the human↔AI loop of making presentations:
+for the human↔AI loop of making presentations — really two tools in
+one, wrapped around whatever AI agent you already use.
 
-1. **Draft** — you shape the content as plain Markdown in a comfortable
-   browser editor: drag slides and blocks around, leave inline
-   suggestions for your AI agent.
+**The drafting problem** is older than AI agents. If you've ever
+written a deck in Markdown for Deckset, Marp or reveal.js, you know
+that restructuring one long file means endless scrolling and
+copy-pasting slides around. provludo's draft editor shows the deck as
+a column of slides: drag a slide — or a single block — somewhere else,
+or just type its new position; suspend slides instead of deleting
+them; attach suggestions to any paragraph. The file on disk stays
+plain Markdown the whole time.
+
+**The review problem.** If you make slides with an AI agent, you know
+the shuttle: look at the deck in the browser, switch to the chat,
+describe what to change — which slide, which bullet, what to cut, how
+to rephrase — wait, refresh, repeat. provludo puts the feedback where
+the slides are: it overlays a review layer on the **live
+presentation** ([reveal.js](https://revealjs.com/), the open-source
+HTML presentation framework, is the best-supported target). Select a
+fragment and leave a comment, fix wording in place, mark a section for
+deletion, suspend a whole slide. Your remarks pile up in a change
+queue; you tell the agent to apply the review, it edits the Markdown
+source and regenerates, you refresh the browser. No describing, no
+"on slide 7, third bullet".
+
+Together they close the loop:
+
+1. **Draft** — shape the content as Markdown in the browser editor.
 2. **Generate** — your agent (Claude Code, or any agent that can read
-   [`AGENT.md`](AGENT.md)) turns the draft into a real deck (reveal.js
-   or anything else that renders to HTML).
-3. **Review** — a review layer appears on top of the live deck:
-   comment, fix wording in place, suspend slides.
-4. **Merge** — the agent applies your review back to the Markdown source
-   and regenerates. Repeat until it's ready for the actual stage.
+   [`AGENT.md`](AGENT.md)) turns the draft into a real deck.
+3. **Review** — annotate the live deck, right on the slides.
+4. **Merge** — the agent applies your review to the source and
+   regenerates. Repeat until it's ready for the actual stage.
 
 *provludo* is Esperanto for **dress rehearsal** (*prov-* "trial" +
 *ludo* "play").
