@@ -54,12 +54,27 @@ opens, and a first-run tour shows you around. Then tell your AI agent:
 When the deck exists, the same page grows a **slides ⇄ text** toggle:
 review the live deck on one side, edit the draft on the other.
 
+**Prerequisites:** [Node.js](https://nodejs.org) ≥ 20 (`npx` ships with
+it) and a browser. Nothing else — provludo has zero dependencies, no
+accounts, no cloud.
+
+**New to this kind of workflow?** provludo shines when you drive an
+agentic coding tool — [Claude Code](https://claude.com/claude-code),
+[OpenAI Codex](https://openai.com/codex/), or a free one: Google's
+open-source [Gemini CLI](https://github.com/google-gemini/gemini-cli)
+(generous no-cost quota), or [OpenCode](https://github.com/sst/opencode)
+and [Aider](https://aider.chat), which work with any model, including
+local ones. Anything that can run commands and edit files will do.
+Then the whole setup is one prompt:
+
+> Run `npx provludo new my-talk`, tell me the URL it prints, then read
+> `my-talk/AGENT.md` and draft a presentation about ⟨your topic⟩.
+
+The agent scaffolds the project and follows the contract; you take over
+in the browser. No cloning, no manual install — `npx` fetches provludo
+straight from npm.
+
 ## What it looks like
-
-The deck your agent generates from the draft — an ordinary reveal.js
-presentation, with the review layer riding quietly in the corner:
-
-![The generated reveal.js deck advancing through slides](https://raw.githubusercontent.com/sypianski/provludo/main/docs/deck.gif)
 
 Reviewing the generated deck — comment on a selected fragment, right on
 the live slides; everything lands in a change queue for the agent:
