@@ -76,10 +76,11 @@ straight from npm.
 
 ## What it looks like
 
-Reviewing the generated deck — comment on a selected fragment, right on
-the live slides; everything lands in a change queue for the agent:
+Reviewing the generated deck, right on the live slides — select a
+fragment and comment, suspend a slide, then peek at the change queue
+your agent will read:
 
-![Review layer on a live reveal.js deck: suggestion modal for a selected fragment](https://raw.githubusercontent.com/sypianski/provludo/main/docs/review.png)
+![Review layer on a live reveal.js deck: comment on a fragment, suspend a slide, export panel with the Markdown change queue](https://raw.githubusercontent.com/sypianski/provludo/main/docs/review.gif)
 
 The draft editor with the table of contents, a suspended slide and an
 appendix slide; a first-run tour explains the controls:
