@@ -82,8 +82,8 @@ $("#btn-slides").addEventListener("click", () => {
 });
 $("#btn-text").addEventListener("click", () => { $("#nodeck").classList.remove("on"); show("text"); });
 
-let initial = "slides";
-try { initial = localStorage.getItem(KEY) || "slides"; } catch {}
+let initial = "text";
+try { initial = localStorage.getItem(KEY) || "text"; } catch {}
 show(initial);
 </script>
 </body>

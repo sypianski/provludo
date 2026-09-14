@@ -23,6 +23,7 @@
       of: "of",
       editor: [
         [null, "Welcome to provludo", "This is your presentation <b>draft</b>: pure content, zero styling. You shape the text here; your AI agent turns it into a real deck later."],
+        [null, "Two views: slides ⇄ text", "You are in the <b>text</b> view (the draft). The toggle at the top of the page switches to the <b>slides</b> view — the live deck your agent generated. It appears once the deck exists; edits live here in the draft."],
         [".slide-bar", "Slides", "Slides are separated by rules. Drag the ⠿ handle to reorder them; hover for controls — suspend ⏸ keeps a slide in the file but out of the deck, 📎 sends it to the appendix."],
         [".blk", "Blocks", "Each paragraph, list, table or image is a block. Click to edit raw Markdown, drag ⠿ to move it — even across slides. A blank line splits a block in two."],
         [".blk", "Suggestions", "Select any text (or use 💬) to attach a note for your AI agent — “make this punchier”, “split into two slides”. Notes live as comments in the file; the agent acts on them and removes them."],
@@ -44,6 +45,7 @@
       of: "z",
       editor: [
         [null, "Witaj w provludo", "To <b>szkic</b> prezentacji: czysta treść, zero stylistyki. Tu nadajesz kształt tekstowi; agent AI zamieni go później w prawdziwy deck."],
+        [null, "Dwa widoki: slajdy ⇄ tekst", "Jesteś w widoku <b>tekst</b> (szkic). Przełącznik u góry strony przeskakuje na widok <b>slajdów</b> — żywy deck wygenerowany przez agenta. Pojawia się, gdy deck powstanie; edytujesz zawsze tutaj, w szkicu."],
         [".slide-bar", "Slajdy", "Slajdy oddzielają kreski. Przeciągnij uchwyt ⠿, by zmienić kolejność; po najechaniu masz kontrolki — ⏸ zawiesza slajd (zostaje w pliku, wypada z decka), 📎 wysyła go do materiałów dodatkowych."],
         [".blk", "Bloki", "Każdy akapit, lista, tabelka czy obrazek to blok. Kliknij, by edytować surowy Markdown; przeciągnij ⠿, by przenieść — także między slajdami. Pusta linia dzieli blok na dwa."],
         [".blk", "Sugestie", "Zaznacz tekst (albo użyj 💬), by dopisać notatkę dla agenta AI — „skróć”, „rozbij na dwa slajdy”. Notatki żyją jako komentarze w pliku; agent je wykonuje i usuwa."],
